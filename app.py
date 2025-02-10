@@ -419,16 +419,20 @@ def record_grp_payment(group_no):
             amounts[-1] = (amounts[-1][0], amounts[-1][1] + diff)
 
         # Insert into the database
+
+        date=  datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+
         for member_id, final_amount in amounts:
             if member_id == payed_by:
                 cursor.execute(
                     "INSERT INTO expenses (payed_by, amount, date, expense_id, description, group_id) VALUES (?, ?, ?, ?, ?, ?)",
-                    (payed_by, final_amount, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), random_id, description, group_no)
+                    (payed_by, final_amount,date, random_id, description, group_no)
                 )
             else:
                 cursor.execute(
                     "INSERT INTO expenses (payed_by, payed_to, amount, date, expense_id, description, group_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                    (payed_by, member_id, final_amount, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), random_id, description, group_no)
+                    (payed_by, member_id, final_amount,date, random_id, description, group_no)
                 )
 
     conn.commit()
@@ -556,6 +560,25 @@ def tracker():
                            owed_by=owed_by, 
                            time_filter=time_filter)
 
+
+@app.route('/delete_expenses/<string:date>', methods=['POST'])
+def delete_expenses(date):
+    if 'user_id' not in session:
+        flash("Please log in first.", "danger")
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Delete the expense for the logged-in user
+    cursor.execute('DELETE FROM expenses WHERE payed_by = ? AND date = ?', (session['unique_key'], date))
+    conn.commit()
+    conn.close()
+
+    flash("Expense deleted successfully.", "success")
+    return redirect(url_for('dashboard'))
+
+
 if __name__ == '__main__':
     init_db()
-    app.run(host='0.0.0.0', port=5000,debug=True)
+    app.run(host='0.0.0.0', port=5000)

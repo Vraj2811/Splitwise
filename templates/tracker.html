@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        padding: 0;
+        background-color: #f4f4f4;
+    }
+
+    .container {
+        width: 80%;
+        margin: auto;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h2,
+    h3 {
+        color: #333;
+    }
+
+    .button {
+        display: inline-block;
+        padding: 10px 20px;
+        background-color: #007BFF;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        margin-bottom: 10px;
+    }
+
+    .button:hover {
+        background-color: #0056b3;
+    }
+
+    form {
+        margin-bottom: 20px;
+    }
+
+    select,
+    input[type="date"],
+    button {
+        padding: 8px;
+        margin-right: 10px;
+    }
+
+    button {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        cursor: pointer;
+        border-radius: 5px;
+    }
+
+    button:hover {
+        background-color: #218838;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    table,
+    th,
+    td {
+        border: 1px solid #ddd;
+    }
+
+    th,
+    td {
+        padding: 10px;
+        text-align: left;
+    }
+
+    th {
+        background-color: #007BFF;
+        color: white;
+    }
+
+    canvas {
+        max-width: 300px !important;
+        /* Makes the pie chart smaller */
+        max-height: 300px !important;
+        display: block;
+        margin: auto;
+    }
+
+    @media (max-width: 768px) {
+        .temp {
+            display: none;
+        }
+    }
+</style>
+
+<body>
+    <div class="container">
+        <a href="{{ url_for('dashboard') }}" class="button">Back to Dashboard</a>
+
+        <h2>Personal Expense Tracker</h2>
+
+        <form method="GET" action="{{ url_for('tracker') }}">
+            <label for="timeframe">Select Timeframe:</label>
+            <select name="timeframe" id="timeframe" onchange="toggleDateInputs()">
+                <option value="all" {% if time_filter=='all' %}selected{% endif %}>All Time</option>
+                <option value="this_month" {% if time_filter=='this_month' %}selected{% endif %}>This Month</option>
+                <option value="prev_month" {% if time_filter=='prev_month' %}selected{% endif %}>Previous Month</option>
+                <option value="custom" {% if time_filter=='custom' %}selected{% endif %}>Custom Range</option>
+            </select>
+
+            <div id="dateInputs" style="display: {% if time_filter=='custom' %}block{% else %}none{% endif %};">
+                <input type="date" name="start_date" id="start_date" {% if time_filter=='custom' %}
+                    value="{{ request.args.get('start_date', '') }}" {% endif %}>
+                <input type="date" name="end_date" id="end_date" {% if time_filter=='custom' %}
+                    value="{{ request.args.get('end_date', '') }}" {% endif %}>
+            </div>
+
+            <button type="submit">Filter</button>
+        </form>
+
+        <h3>Total Expenses for Selected Timeframe: ₹{{ total_expenses }}</h3>
+
+        <h3>Expenses by Description</h3>
+        <div style="display: flex; align-items: center;">
+            <canvas id="expenseChart"></canvas>
+            <ul class="temp">
+                {% for desc, amount in expense_summary.items() %}
+                <li><b>{{ desc }}:</b> ₹{{ amount }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <script>
+            var ctx = document.getElementById('expenseChart').getContext('2d');
+            var chart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: {{ expense_summary.keys() | list | tojson }},
+            datasets: [{
+                data: {{ expense_summary.values() | list | tojson }},
+                backgroundColor: ['red', 'blue', 'green', 'yellow', 'purple', 'orange']
+                    }]
+                },
+            options: {
+                responsive: false,
+                    maintainAspectRatio: false
+            }
+            });
+        </script>
+
+        <h3>Expense List</h3>
+        <table>
+            <tr>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Description</th>
+            </tr>
+            {% for expense in expenses %}
+            <tr>
+                <td>{{ expense['date'] }}</td>
+                <td>₹{{ expense['amount'] }}</td>
+                <td>{{ expense['description'] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+        <h3>How Much You Owe</h3>
+        <table>
+            <tr>
+                <th>Person</th>
+                <th>Amount</th>
+            </tr>
+            {% for person, amount in owe_to.items() %}
+            <tr>
+                <td>{{ person }}</td>
+                <td>₹{{ amount }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+        <h3>Who Owes You</h3>
+        <table>
+            <tr>
+                <th>Person</th>
+                <th>Amount</th>
+            </tr>
+            {% for person, amount in owed_by.items() %}
+            <tr>
+                <td>{{ person }}</td>
+                <td>₹{{ amount }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</body>
+
+</html>
+<script>
+    function toggleDateInputs() {
+        var timeframe = document.getElementById("timeframe").value;
+        var dateInputs = document.getElementById("dateInputs");
+
+        if (timeframe === "custom") {
+            dateInputs.style.display = "block";
+        } else {
+            dateInputs.style.display = "none";
+        }
+    }
+</script>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .group-card {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px;
+        }
+
+        .group-card h5 {
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .my-4 a {
+                display: block;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container mt-4">
+        <h1>Hello, {{ session['name'] }} ({{ session['unique_key'] }})</h1>
+
+        <div class="my-4">
+            <a href="#" class="btn btn-primary btn-lg" data-bs-toggle="modal"
+                data-bs-target="#recordTransactionModal">Record Payment</a>
+            <a href="#" class="btn btn-secondary btn-lg" data-bs-toggle="modal" data-bs-target="#newGroupModal">New
+                Group</a>
+            <a href="/tracker" class="btn btn-success btn-lg">Tracker</a>
+            <a href="/logout" class="btn btn-danger btn-lg">Logout</a>
+        </div>
+
+
+        <div class="my-4">
+            <div class="row">
+                <!-- Groups Section -->
+                <div class="col-md-6">
+                    <h3>Your Groups</h3>
+                    <div class="row">
+                        {% for group in groups %}
+                        <div class="col-md-6">
+                            <div class="group-card">
+                                <h4>{{ group['name'] }}</h4>
+                                <a href="{{ url_for('group_page', group_id=group['group_no']) }}"
+                                    class="btn btn-info btn-sm">View</a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Recent Personal Expenses Section -->
+                <div class="col-md-6">
+                    <h3>Recent Personal Expenses</h3>
+                    <p><strong>Total this month:</strong> ₹{{ total_expenses_month }}</p>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for expense in recent_expenses %}
+                            <tr>
+                                <td>{{ expense[0] }}</td>
+                                <td>{{ expense[1] }}</td>
+                                <td>₹{{ expense[2] }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="3">No recent expenses</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for New Group -->
+    <div class="modal fade" id="newGroupModal" tabindex="-1" aria-labelledby="newGroupModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="newGroupModalLabel">Create a New Group</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" action="{{ url_for('create_group') }}">
+                        <div class="mb-3">
+                            <label for="groupName" class="form-label">Group Name</label>
+                            <input type="text" class="form-control" id="groupName" name="group_name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="memberIds" class="form-label">Member Unique IDs (comma separated)</label>
+                            <input type="text" class="form-control" id="memberIds" name="member_ids" required>
+                            <small class="form-text text-muted">Enter unique IDs of members, separated by
+                                commas.</small>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Create Group</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Recording a Transaction -->
+    <div class="modal fade" id="recordTransactionModal" tabindex="-1" aria-labelledby="recordTransactionModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="recordTransactionModalLabel">Record a Payment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" action="{{ url_for('record_payment') }}">
+                        <div class="mb-3">
+                            <label for="amount" class="form-label">Amount</label>
+                            <input type="text" class="form-control" id="amount" name="amount" required
+                                pattern="^\d+(\.\d{0,2})?$" placeholder="Enter amount (e.g. 10.50)"
+                                title="Please enter a valid amount with up to 2 decimal places">
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <input class="form-control" id="description" name="description">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Record Payment</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

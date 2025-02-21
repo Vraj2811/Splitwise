@@ -591,6 +591,10 @@ def vraj_only():
     conn.close()
     return render_template('users.html', users=users)
 
+@app.route("/temp")
+def temp():
+    return render_template("temp.html")
+
 
 if __name__ == '__main__':
     init_db()

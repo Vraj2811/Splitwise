@@ -7,7 +7,11 @@ import random
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'default_secret_key_for_development')
-DATABASE = './database.db'
+# DATABASE = './database.db'
+
+BASE_DIR = os.path.join(os.getenv("HOME"), "site", "wwwroot")
+DATABASE = os.path.join(BASE_DIR, "database.db")
+
 
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)

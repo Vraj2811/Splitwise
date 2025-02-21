@@ -133,28 +133,29 @@
 
     </div>
 
-
-    <!-- Modal for Adding New Member -->
+    <!-- Modal for Adding New Members -->
     <div class="modal fade" id="addMemberModal" tabindex="-1" aria-labelledby="addMemberModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="addMemberModalLabel">Add New Member</h5>
+                    <h5 class="modal-title" id="addMemberModalLabel">Add New Members</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form method="POST" action="{{ url_for('add_member', group_no=group['group_no']) }}">
+                    <form method="POST" action="{{ url_for('add_members', group_no=group['group_no']) }}">
                         <div class="mb-3">
-                            <label for="member_id" class="form-label">Member Unique ID</label>
-                            <input type="text" class="form-control" id="member_id" name="member_id" required>
-                            <small class="form-text text-muted">Enter the unique ID of the member to be added.</small>
+                            <label for="member_ids" class="form-label">Member Unique IDs (comma separated)</label>
+                            <input type="text" class="form-control" id="member_ids" name="member_ids" required>
+                            <small class="form-text text-muted">Enter unique IDs of members, separated by
+                                commas.</small>
                         </div>
-                        <button type="submit" class="btn btn-primary">Add Member</button>
+                        <button type="submit" class="btn btn-primary">Add Members</button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
+
 
     <!-- Modal for Recording a Payment -->
     <div class="modal fade" id="recordTransactionModal" tabindex="-1" aria-labelledby="recordTransactionModalLabel"

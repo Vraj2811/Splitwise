@@ -7,12 +7,12 @@ import random
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'default_secret_key_for_development')
-# DATABASE = './database.db'
+DATABASE = './database.db'
 
-BASE_DIR = os.path.join('/home', 'site', 'wwwroot')  # Persistent path
-DATABASE = os.path.join(BASE_DIR, 'data.db')
+# BASE_DIR = os.path.join('/home', 'site', 'wwwroot')  # Persistent path
+# DATABASE = os.path.join(BASE_DIR, 'data.db')
 
-app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{DATABASE}"
+# app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{DATABASE}"
 
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)
@@ -123,8 +123,13 @@ def dashboard():
     cursor = conn.cursor()
 
     # Fetch user's groups
-    cursor.execute('SELECT * FROM groups WHERE user_id = ?', (session['unique_key'],))
-    groups = cursor.fetchall()
+    cursor.execute('SELECT group_no, name FROM groups WHERE user_id = ?', (session['unique_key'],))
+    groups = []
+    for group in cursor.fetchall():
+        cursor.execute('SELECT COUNT(*) FROM groups WHERE group_no = ?', (group[0],))
+        member_count = cursor.fetchone()[0]
+        groups.append({'group_no': group[0], 'name': group[1], 'member_count': member_count})
+
 
     # Get the first and last date of the current month
     today = datetime.today()
@@ -254,8 +259,8 @@ def group_page(group_id):
                         calculate_amount_owed=calculate_amount_owed)
 
 
-@app.route('/add_member/<string:group_no>', methods=['POST'])
-def add_member(group_no):
+@app.route('/add_members/<string:group_no>', methods=['POST'])
+def add_members(group_no):
     if 'user_id' not in session:
         flash("Please log in first.", "danger")
         return redirect(url_for('login'))
@@ -583,7 +588,6 @@ def delete_expenses(date):
     flash("Expense deleted successfully.", "success")
     return redirect(url_for('dashboard'))
 
-
 @app.route('/vraj_only')
 def vraj_only():
     conn = get_db_connection()
@@ -593,4 +597,4 @@ def vraj_only():
 
 if __name__ == '__main__':
     init_db()
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000,debug = True)

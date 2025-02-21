@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 import sqlite3
 from datetime import datetime,timedelta
+import calendar
 import os
 import random
 
@@ -122,13 +123,14 @@ def dashboard():
 
     # Get the first and last date of the current month
     today = datetime.today()
-    start_of_month = today.replace(day=1).strftime('%Y-%m-%d')
-    end_of_month = today.strftime('%Y-%m-%d')
+    start_date = today.replace(day=1).strftime('%Y-%m-%d')  # First day of the month
+    last_day = calendar.monthrange(today.year, today.month)[1]  # Get last day of the month
+    end_date = today.replace(day=last_day).strftime('%Y-%m-%d')
 
     # Fetch total personal expenses for this month
     cursor.execute(
         'SELECT SUM(amount) FROM expenses WHERE payed_by = ? AND payed_to IS NULL AND date BETWEEN ? AND ?',
-        (session['unique_key'], start_of_month, end_of_month)
+        (session['unique_key'], start_date, end_date)
     )
     total_expenses_month = round(cursor.fetchone()[0] or 0, 2)
 
@@ -234,10 +236,18 @@ def group_page(group_id):
         else:
             expense_table[expense[6]]['Split Between'].add((user_map[expense[2]], round(expense[4], 2)))
 
-    
+    # Calculate total group expenses
+    total_group_expense = round(sum(expense[4] for expense in expenses),2)  # Assuming amount is at index 4
+
     # Send the expense_table to the template
-    return render_template('group_page.html', group=group, members=members, expenses=expenses, expense_table=expense_table,
-        calculate_amount_owed=calculate_amount_owed)
+    return render_template('group_page.html', 
+                        group=group, 
+                        members=members, 
+                        expenses=expenses, 
+                        expense_table=expense_table,
+                        total_group_expense=total_group_expense,
+                        calculate_amount_owed=calculate_amount_owed)
+
 
 @app.route('/add_member/<string:group_no>', methods=['POST'])
 def add_member(group_no):
@@ -409,16 +419,20 @@ def record_grp_payment(group_no):
             amounts[-1] = (amounts[-1][0], amounts[-1][1] + diff)
 
         # Insert into the database
+
+        date=  datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+
         for member_id, final_amount in amounts:
             if member_id == payed_by:
                 cursor.execute(
                     "INSERT INTO expenses (payed_by, amount, date, expense_id, description, group_id) VALUES (?, ?, ?, ?, ?, ?)",
-                    (payed_by, final_amount, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), random_id, description, group_no)
+                    (payed_by, final_amount,date, random_id, description, group_no)
                 )
             else:
                 cursor.execute(
                     "INSERT INTO expenses (payed_by, payed_to, amount, date, expense_id, description, group_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                    (payed_by, member_id, final_amount, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), random_id, description, group_no)
+                    (payed_by, member_id, final_amount,date, random_id, description, group_no)
                 )
 
     conn.commit()
@@ -483,18 +497,20 @@ def tracker():
     end_date = None
 
     if time_filter == "this_month":
-        start_date = today.replace(day=1).strftime('%Y-%m-%d')
-        end_date = today.strftime('%Y-%m-%d')
+        start_date = today.replace(day=1).strftime('%Y-%m-%d')  # First day of the month
+        last_day = calendar.monthrange(today.year, today.month)[1]  # Get last day of the month
+        future_day = min(last_day + 1, calendar.monthrange(today.year, today.month)[1])  # Ensure it doesn't exceed month
+        end_date = today.replace(day=future_day).strftime('%Y-%m-%d')  # Last day + 1 (or max last day)
     elif time_filter == "prev_month":
         first_day_last_month = (today.replace(day=1) - timedelta(days=1)).replace(day=1)
         last_day_last_month = (today.replace(day=1) - timedelta(days=1))
-        start_date = first_day_last_month.strftime('%Y-%m-%d')
-        end_date = last_day_last_month.strftime('%Y-%m-%d')
+        start_date = first_day_last_month.strftime('%Y-%m-%d')  # First day of last month
+        end_date = last_day_last_month.strftime('%Y-%m-%d')  # Last day of last month
     elif time_filter == "custom":
         start_date = request.args.get('start_date')
         end_date = request.args.get('end_date')
 
-    date_filter = " AND payed_to IS NULL"
+    date_filter = " AND expense_id IS NULL"
     if start_date:
         date_filter += " AND date >= ?"
         params.append(start_date)
@@ -544,6 +560,33 @@ def tracker():
                            owed_by=owed_by, 
                            time_filter=time_filter)
 
+
+@app.route('/delete_expenses/<string:date>', methods=['POST'])
+def delete_expenses(date):
+    if 'user_id' not in session:
+        flash("Please log in first.", "danger")
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Delete the expense for the logged-in user
+    cursor.execute('DELETE FROM expenses WHERE payed_by = ? AND date = ?', (session['unique_key'], date))
+    conn.commit()
+    conn.close()
+
+    flash("Expense deleted successfully.", "success")
+    return redirect(url_for('dashboard'))
+
+
+@app.route('/vraj_only')
+def vraj_only():
+    conn = get_db_connection()
+    users = conn.execute('SELECT * FROM users').fetchall()
+    conn.close()
+    return render_template('users.html', users=users)
+
+
 if __name__ == '__main__':
     init_db()
-    app.run(host='0.0.0.0', port=5000,debug=True)
+    app.run(host='0.0.0.0', port=5000)

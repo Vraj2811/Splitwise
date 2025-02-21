@@ -88,6 +88,10 @@
             <p>No expenses recorded yet.</p>
             {% endif %}
         </div>
+        <!-- Total Group Expense Section -->
+        <div class="my-4">
+            <h4>Total Group Expense = ₹{{ total_group_expense }}</h4>
+        </div>
 
         <!-- Add this section below the Expenses section -->
         <div class="my-4">
@@ -128,6 +132,7 @@
         </div>
 
     </div>
+
 
     <!-- Modal for Adding New Member -->
     <div class="modal fade" id="addMemberModal" tabindex="-1" aria-labelledby="addMemberModalLabel" aria-hidden="true">

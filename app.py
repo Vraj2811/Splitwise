@@ -7,12 +7,12 @@ import random
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'default_secret_key_for_development')
-DATABASE = './database.db'
+# DATABASE = './database.db'
 
-# BASE_DIR = os.path.join('/home', 'site', 'wwwroot')  # Persistent path
-# DATABASE = os.path.join(BASE_DIR, 'data.db')
+BASE_DIR = os.path.join('/home', 'site', 'wwwroot')  # Persistent path
+DATABASE = os.path.join(BASE_DIR, 'data.db')
 
-# app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{DATABASE}"
+app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{DATABASE}"
 
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)
@@ -597,4 +597,4 @@ def vraj_only():
 
 if __name__ == '__main__':
     init_db()
-    app.run(host='0.0.0.0', port=5000,debug = True)
+    app.run(host='0.0.0.0', port=5000)

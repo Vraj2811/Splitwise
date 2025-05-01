@@ -22,7 +22,7 @@ def get_db_connection():
 def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
-    
+
     # Create Users table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
@@ -59,7 +59,7 @@ def init_db():
             FOREIGN KEY (group_id) REFERENCES groups(group_no)
         )
     ''')
-    
+
     conn.commit()
     conn.close()
 
@@ -75,7 +75,7 @@ def login():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
-        
+
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute('SELECT * FROM users WHERE email = ? AND password = ?', (email, password))
@@ -99,7 +99,7 @@ def register():
         email = request.form['email']
         password = request.form['password']
         unique_key = ''.join([str(random.randint(0, 9)) for _ in range(10)])
-        
+
         try:
             conn = get_db_connection()
             cursor = conn.cursor()
@@ -149,11 +149,11 @@ def dashboard():
         'SELECT date, description, amount FROM expenses WHERE payed_by = ? AND payed_to IS NULL ORDER BY date DESC LIMIT 5',
         (session['unique_key'],)
     )
-    recent_expenses = cursor.fetchall()  
+    recent_expenses = cursor.fetchall()
 
     conn.close()
 
-    return render_template('dashboard.html', groups=groups, 
+    return render_template('dashboard.html', groups=groups,
                            recent_expenses=recent_expenses,
                            total_expenses_month=total_expenses_month)
 
@@ -173,7 +173,7 @@ def create_group():
     member_ids = request.form['member_ids'].split(',')
 
     unique_grp = ''.join([str(random.randint(0, 9)) for _ in range(10)])
-    
+
     # Validate member IDs
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -188,7 +188,7 @@ def create_group():
         user = cursor.fetchone()
         if user:
             cursor.execute('INSERT INTO groups (user_id, name, group_no) VALUES (?, ?,?)', (member_id, group_name, unique_grp))
-    
+
     conn.commit()
     conn.close()
 
@@ -240,7 +240,7 @@ def group_page(group_id):
 
     for expense in expenses:
         expense_table[expense[6]]['Amount'] = round(expense_table[expense[6]]['Amount'] + expense[4], 2)
-        
+
         if expense[2] is None:
             expense_table[expense[6]]['Split Between'].add((user_map[expense[1]], round(expense[4], 2)))
         else:
@@ -250,10 +250,10 @@ def group_page(group_id):
     total_group_expense = round(sum(expense[4] for expense in expenses),2)  # Assuming amount is at index 4
 
     # Send the expense_table to the template
-    return render_template('group_page.html', 
-                        group=group, 
-                        members=members, 
-                        expenses=expenses, 
+    return render_template('group_page.html',
+                        group=group,
+                        members=members,
+                        expenses=expenses,
                         expense_table=expense_table,
                         total_group_expense=total_group_expense,
                         calculate_amount_owed=calculate_amount_owed)
@@ -286,7 +286,7 @@ def add_members(group_no):
         flash("Member is already part of this group.", "warning")
     else:
         group_name = cursor.execute('SELECT name FROM groups WHERE group_no = ?', (group_no,)).fetchone()[0]
-        cursor.execute('INSERT INTO groups (user_id, group_no, name) VALUES (?, ?, ?)', 
+        cursor.execute('INSERT INTO groups (user_id, group_no, name) VALUES (?, ?, ?)',
                        (member_id, group_no, group_name))
         conn.commit()
         flash(f"{member['name']} has been added to the group.", "success")
@@ -332,7 +332,7 @@ def record_grp_payment(group_no):
     if not amount or not description or not split_members or not split_type:
         flash("All fields are required!", "danger")
         return redirect(url_for('group_page', group_id=group_no))
-    
+
     amount = float(amount)  # Convert amount to float
 
     conn = sqlite3.connect('database.db')
@@ -341,7 +341,7 @@ def record_grp_payment(group_no):
     # Process split logic
     if split_type == "equally":
         share_amount = amount / len(split_members)
-        
+
         # Calculate rounded down and up amounts
         amounts = []
         total_rounded = 0
@@ -467,8 +467,40 @@ def delete_expense(group_no, expense_id):
 
     return redirect(url_for('group_page', group_id=group_no))
 
+@app.route('/simplify_payments/<string:group_id>')
+def simplify_payments(group_id):
+    if 'user_id' not in session:
+        flash("Please log in first.", "danger")
+        return redirect(url_for('login'))
+
+    # Get group information
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute('SELECT * FROM groups WHERE group_no = ?', (group_id,))
+    group = cursor.fetchone()
+
+    if not group:
+        flash("Group not found.", "danger")
+        conn.close()
+        return redirect(url_for('dashboard'))
+
+    # Get members of the group
+    cursor.execute('SELECT users.name, users.unique_key FROM users, groups WHERE users.unique_key = groups.user_id AND groups.group_no = ?', (group_id,))
+    members = cursor.fetchall()
+
+    conn.close()
+
+    # Calculate simplified payments
+    simplified_payments = calculate_simplified_payments(group_id)
+
+    return render_template('simplified_payments.html',
+                          group=group,
+                          members=members,
+                          simplified_payments=simplified_payments)
+
 # Example function to calculate amount owed
-def calculate_amount_owed(payer_id, payee_id,group_no):
+def calculate_amount_owed(payer_id, payee_id, group_no):
     # Get group information
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -483,11 +515,77 @@ def calculate_amount_owed(payer_id, payee_id,group_no):
     for expense in expenses:
         if (expense[1] == payer_id) & (expense[2] == payee_id):
             answer += expense[4]
-        
+
         if (expense[2] == payer_id) & (expense[1] == payee_id):
             answer -= expense[4]
 
-    return max(answer,0)
+    return max(answer, 0)
+
+def calculate_simplified_payments(group_no):
+    """
+    Calculate simplified payments for a group to minimize the number of transactions.
+    Returns a list of transactions in the format (from_user, to_user, amount).
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Get all members of the group
+    cursor.execute('SELECT users.unique_key, users.name FROM users, groups WHERE users.unique_key = groups.user_id AND groups.group_no = ?', (group_no,))
+    members = cursor.fetchall()
+
+    # Create a balance sheet for each member
+    balances = {}
+    for member in members:
+        balances[member[0]] = 0
+
+    # Calculate net balance for each member
+    for i, payer in enumerate(members):
+        for j, payee in enumerate(members):
+            if i != j:
+                amount_owed = calculate_amount_owed(payer[0], payee[0], group_no)
+                if amount_owed > 0:
+                    balances[payer[0]] += amount_owed
+                    balances[payee[0]] -= amount_owed
+
+    # Separate members into creditors (positive balance) and debtors (negative balance)
+    creditors = [(member_id, balance) for member_id, balance in balances.items() if balance > 0]
+    debtors = [(member_id, -balance) for member_id, balance in balances.items() if balance < 0]
+
+    # Sort by amount (descending)
+    creditors.sort(key=lambda x: x[1], reverse=True)
+    debtors.sort(key=lambda x: x[1], reverse=True)
+
+    # Create a map of user IDs to names
+    user_map = {member[0]: member[1] for member in members}
+
+    # Calculate simplified payments
+    simplified_payments = []
+    i, j = 0, 0
+
+    while i < len(creditors) and j < len(debtors):
+        creditor, credit = creditors[i]
+        debtor, debt = debtors[j]
+
+        # Calculate the minimum of what the debtor owes and what the creditor is owed
+        amount = min(credit, debt)
+
+        if amount > 0:
+            # Round to 2 decimal places
+            amount = round(amount, 2)
+            simplified_payments.append((debtor, creditor, amount, user_map[debtor], user_map[creditor]))
+
+        # Update balances
+        creditors[i] = (creditor, credit - amount)
+        debtors[j] = (debtor, debt - amount)
+
+        # Move to next creditor or debtor if their balance is settled
+        if credit - amount <= 0.01:  # Using a small threshold to handle floating point errors
+            i += 1
+        if debt - amount <= 0.01:
+            j += 1
+
+    conn.close()
+    return simplified_payments
 
 @app.route('/tracker', methods=['GET'])
 def tracker():
@@ -542,7 +640,7 @@ def tracker():
 
     # Fetching how much the user owes (No Date Filter)
     cursor.execute('''
-        SELECT u.name, e.payed_to, SUM(e.amount) 
+        SELECT u.name, e.payed_to, SUM(e.amount)
         FROM expenses e
         JOIN users u ON e.payed_to = u.unique_key
         WHERE e.payed_by = ? AND e.payed_to IS NOT NULL
@@ -552,7 +650,7 @@ def tracker():
 
     # Fetching how much is owed to the user (No Date Filter)
     cursor.execute('''
-        SELECT u.name, e.payed_by, SUM(e.amount) 
+        SELECT u.name, e.payed_by, SUM(e.amount)
         FROM expenses e
         JOIN users u ON e.payed_by = u.unique_key
         WHERE e.payed_to = ? AND e.payed_by IS NOT NULL
@@ -562,12 +660,12 @@ def tracker():
 
     conn.close()
 
-    return render_template('tracker.html', 
-                           total_expenses=total_expenses, 
-                           expense_summary=expense_summary, 
-                           expenses=expenses, 
-                           owe_to=owe_to, 
-                           owed_by=owed_by, 
+    return render_template('tracker.html',
+                           total_expenses=total_expenses,
+                           expense_summary=expense_summary,
+                           expenses=expenses,
+                           owe_to=owe_to,
+                           owed_by=owed_by,
                            time_filter=time_filter)
 
 
@@ -588,6 +686,37 @@ def delete_expenses(date):
     flash("Expense deleted successfully.", "success")
     return redirect(url_for('dashboard'))
 
+@app.route('/delete_group/<string:group_id>', methods=['POST'])
+def delete_group(group_id):
+    if 'user_id' not in session:
+        flash("Please log in first.", "danger")
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # First check if the user is a member of this group
+    cursor.execute('SELECT * FROM groups WHERE group_no = ? AND user_id = ?',
+                  (group_id, session['unique_key']))
+    group = cursor.fetchone()
+
+    if not group:
+        flash("You don't have permission to delete this group.", "danger")
+        conn.close()
+        return redirect(url_for('dashboard'))
+
+    # Delete all expenses associated with this group
+    cursor.execute('DELETE FROM expenses WHERE group_id = ?', (group_id,))
+
+    # Delete all group memberships
+    cursor.execute('DELETE FROM groups WHERE group_no = ?', (group_id,))
+
+    conn.commit()
+    conn.close()
+
+    flash("Group and all associated expenses deleted successfully.", "success")
+    return redirect(url_for('dashboard'))
+
 @app.route('/vraj_only')
 def vraj_only():
     conn = get_db_connection()
@@ -597,4 +726,4 @@ def vraj_only():
 
 if __name__ == '__main__':
     init_db()
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000,debug = True)

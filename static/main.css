@@ -1,0 +1,339 @@
+/* Main CSS file for Splitwise app */
+:root {
+  --primary-color: #5D5FEF;
+  --primary-light: #7879F1;
+  --primary-dark: #4A4AD4;
+  --secondary-color: #FF6B6B;
+  --secondary-light: #FF8E8E;
+  --secondary-dark: #E05050;
+  --success-color: #2ECC71;
+  --warning-color: #F39C12;
+  --danger-color: #E74C3C;
+  --info-color: #3498DB;
+  --light-color: #F8F9FA;
+  --dark-color: #343A40;
+  --gray-100: #F8F9FA;
+  --gray-200: #E9ECEF;
+  --gray-300: #DEE2E6;
+  --gray-400: #CED4DA;
+  --gray-500: #ADB5BD;
+  --gray-600: #6C757D;
+  --gray-700: #495057;
+  --gray-800: #343A40;
+  --gray-900: #212529;
+  --font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--gray-100);
+  color: var(--gray-800);
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+/* Navbar styling */
+.navbar {
+  background-color: var(--primary-color);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand {
+  font-weight: 700;
+  color: white !important;
+}
+
+.navbar .nav-link {
+  color: rgba(255, 255, 255, 0.85) !important;
+  font-weight: 500;
+}
+
+.navbar .nav-link:hover {
+  color: white !important;
+}
+
+/* Card styling */
+.card {
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: none;
+  margin-bottom: 20px;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  background-color: var(--primary-light);
+  color: white;
+  border-radius: 10px 10px 0 0 !important;
+  font-weight: 600;
+}
+
+/* Button styling */
+.btn {
+  border-radius: 6px;
+  font-weight: 500;
+  padding: 8px 16px;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-dark);
+  border-color: var(--primary-dark);
+}
+
+.btn-secondary {
+  background-color: var(--gray-600);
+  border-color: var(--gray-600);
+}
+
+.btn-success {
+  background-color: var(--success-color);
+  border-color: var(--success-color);
+}
+
+.btn-danger {
+  background-color: var(--danger-color);
+  border-color: var(--danger-color);
+}
+
+.btn-info {
+  background-color: var(--info-color);
+  border-color: var(--info-color);
+  color: white;
+}
+
+.btn-info:hover {
+  color: white;
+}
+
+/* Form styling */
+.form-control {
+  border-radius: 6px;
+  border: 1px solid var(--gray-300);
+  padding: 10px 15px;
+}
+
+.form-control:focus {
+  border-color: var(--primary-light);
+  box-shadow: 0 0 0 0.2rem rgba(93, 95, 239, 0.25);
+}
+
+.form-label {
+  font-weight: 500;
+  color: var(--gray-700);
+}
+
+/* Table styling */
+.table {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.table thead th {
+  background-color: var(--primary-color);
+  color: white;
+  font-weight: 500;
+  border-bottom: none;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+  background-color: rgba(93, 95, 239, 0.05);
+}
+
+/* Group card styling */
+.group-card {
+  border-radius: 10px;
+  padding: 20px;
+  background-color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.group-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+.group-card h4 {
+  color: var(--primary-color);
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.group-card p {
+  color: var(--gray-600);
+  margin-bottom: 15px;
+}
+
+.group-card .btn-group {
+  margin-top: auto;
+}
+
+/* Alert styling */
+.alert {
+  border-radius: 8px;
+  border: none;
+}
+
+.alert-success {
+  background-color: rgba(46, 204, 113, 0.15);
+  color: var(--success-color);
+}
+
+.alert-danger {
+  background-color: rgba(231, 76, 60, 0.15);
+  color: var(--danger-color);
+}
+
+.alert-info {
+  background-color: rgba(52, 152, 219, 0.15);
+  color: var(--info-color);
+}
+
+.alert-warning {
+  background-color: rgba(243, 156, 18, 0.15);
+  color: var(--warning-color);
+}
+
+/* Container styling */
+.container {
+  padding: 20px;
+}
+
+.page-header {
+  margin-bottom: 30px;
+  border-bottom: 1px solid var(--gray-200);
+  padding-bottom: 15px;
+}
+
+.page-header h1 {
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
+/* Login and Register pages */
+.auth-container {
+  max-width: 400px;
+  margin: 50px auto;
+  padding: 30px;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.auth-container h2 {
+  color: var(--primary-color);
+  font-weight: 700;
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+.auth-container .form-group {
+  margin-bottom: 20px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .btn {
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+  
+  .container {
+    padding: 15px;
+  }
+  
+  .page-header {
+    margin-bottom: 20px;
+  }
+  
+  .card {
+    margin-bottom: 15px;
+  }
+}
+
+/* Badge styling */
+.badge {
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-weight: 500;
+}
+
+.badge-primary {
+  background-color: var(--primary-color);
+}
+
+.badge-success {
+  background-color: var(--success-color);
+}
+
+.badge-danger {
+  background-color: var(--danger-color);
+}
+
+.badge-info {
+  background-color: var(--info-color);
+}
+
+/* Payment matrix styling */
+.payment-matrix {
+  overflow-x: auto;
+}
+
+.payment-matrix .table th {
+  white-space: nowrap;
+}
+
+.payment-amount {
+  font-weight: 600;
+}
+
+.payment-positive {
+  color: var(--success-color);
+}
+
+.payment-negative {
+  color: var(--danger-color);
+}
+
+/* Simplified payments styling */
+.payment-arrow {
+  font-size: 20px;
+  margin: 0 10px;
+}
+
+.payment-card {
+  border-left: 4px solid var(--primary-color);
+}
+
+/* Footer styling */
+.footer {
+  background-color: var(--gray-800);
+  color: white;
+  padding: 20px 0;
+  margin-top: 50px;
+}
+
+.footer a {
+  color: var(--gray-300);
+}
+
+.footer a:hover {
+  color: white;
+  text-decoration: none;
+}

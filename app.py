@@ -7,10 +7,10 @@ import random
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'default_secret_key_for_development')
-# DATABASE = './database.db'
-
 BASE_DIR = os.path.join('/home', 'site', 'wwwroot')  # Persistent path
 DATABASE = os.path.join(BASE_DIR, 'data.db')
+# DATABASE = './database.db'
+
 
 app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{DATABASE}"
 

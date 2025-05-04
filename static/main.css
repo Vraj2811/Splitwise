@@ -97,8 +97,9 @@ body {
 
 .card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 15px rgba(229, 9, 20, 0.3);
   border-color: var(--primary-color);
+  border-width: 2px;
 }
 
 .card-header {
@@ -231,7 +232,28 @@ body {
 }
 
 .table-hover tbody tr:hover {
-  background-color: rgba(229, 9, 20, 0.1);
+  background-color: rgba(229, 9, 20, 0.25);
+  color: white;
+}
+
+.table-hover tbody tr:hover td {
+  color: white;
+  font-weight: 500;
+}
+
+.table-hover tbody tr:hover .text-success {
+  color: #4CD964 !important;
+  font-weight: 600;
+}
+
+.table-hover tbody tr:hover .text-danger {
+  color: #FF3B30 !important;
+  font-weight: 600;
+}
+
+.table-hover tbody tr:hover .text-primary {
+  color: #FF3D47 !important;
+  font-weight: 600;
 }
 
 .table td, .table th {
@@ -270,8 +292,9 @@ body {
 
 .group-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 15px rgba(229, 9, 20, 0.3);
   border-color: var(--primary-color);
+  border-width: 2px;
 }
 
 .group-card h4 {
@@ -466,6 +489,12 @@ body {
   background-color: var(--bg-card);
   color: var(--text-light);
   border-color: var(--border-color);
+  transition: all 0.2s;
+}
+
+.list-group-item:hover {
+  background-color: rgba(229, 9, 20, 0.15);
+  border-color: var(--primary-color);
 }
 
 .list-group-flush .list-group-item {

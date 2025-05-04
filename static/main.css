@@ -277,6 +277,12 @@ body {
   color: var(--text-light);
 }
 
+.table-dark, .table-dark > th, .table-dark > td {
+  background-color: var(--bg-darker);
+  color: var(--text-light);
+  font-weight: 600;
+}
+
 /* Group card styling */
 .group-card {
   border-radius: 10px;

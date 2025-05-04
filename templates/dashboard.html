@@ -40,6 +40,8 @@
                             <i class="bi bi-person-circle"></i> {{ session['name'] }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                            <li><div class="dropdown-item text-muted">ID: {{ session['unique_key'] }}</div></li>
+                            <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
                         </ul>
                     </li>
@@ -64,7 +66,15 @@
 
         <!-- Page Header -->
         <div class="page-header d-flex justify-content-between align-items-center">
-            <h1>Dashboard</h1>
+            <div>
+                <h1>Dashboard</h1>
+                <p class="text-muted">
+                    <i class="bi bi-person-badge"></i> Your ID: <span class="badge bg-secondary">{{ session['unique_key'] }}</span>
+                    <button class="btn btn-sm btn-outline-secondary ms-2" onclick="copyToClipboard('{{ session['unique_key'] }}')">
+                        <i class="bi bi-clipboard"></i> Copy
+                    </button>
+                </p>
+            </div>
             <div class="d-flex gap-2">
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#recordTransactionModal">
                     <i class="bi bi-plus-circle"></i> Record Payment
@@ -126,7 +136,7 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0"><i class="bi bi-receipt"></i> Recent Personal Expenses</h5>
-                        <span class="badge bg-primary">₹{{ total_expenses_month }} this month</span>
+                        <span class="badge bg-primary">₹{{ "%.2f"|format(total_expenses_month|float) }} this month</span>
                     </div>
                     <div class="card-body">
                         {% if recent_expenses %}
@@ -145,7 +155,7 @@
                                     <tr>
                                         <td>{{ expense[0] }}</td>
                                         <td>{{ expense[1] or 'No description' }}</td>
-                                        <td class="fw-bold">₹{{ expense[2] }}</td>
+                                        <td class="fw-bold">₹{{ "%.2f"|format(expense[2]|float) }}</td>
                                         <td>
                                             <form action="{{ url_for('delete_expenses', date=expense[0]) }}" method="post"
                                                 onsubmit="return confirm('Are you sure you want to delete this expense?');">
@@ -292,6 +302,26 @@
                     }, false)
                 })
         })()
+
+        // Copy to clipboard function
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                // Show a temporary tooltip or change button text
+                const copyBtn = document.querySelector('.btn-outline-secondary');
+                const originalHTML = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<i class="bi bi-check"></i> Copied!';
+                copyBtn.classList.remove('btn-outline-secondary');
+                copyBtn.classList.add('btn-success');
+
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalHTML;
+                    copyBtn.classList.remove('btn-success');
+                    copyBtn.classList.add('btn-outline-secondary');
+                }, 2000);
+            }).catch(err => {
+                console.error('Could not copy text: ', err);
+            });
+        }
     </script>
 </body>
 

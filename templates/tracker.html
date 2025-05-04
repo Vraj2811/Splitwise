@@ -41,6 +41,8 @@
                             <i class="bi bi-person-circle"></i> {{ session['name'] }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                            <li><div class="dropdown-item text-muted">ID: {{ session['unique_key'] }}</div></li>
+                            <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
                         </ul>
                     </li>
@@ -106,7 +108,7 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <span>Total Expenses:</span>
-                            <span class="fs-4 fw-bold text-primary">₹{{ total_expenses }}</span>
+                            <span class="fs-4 fw-bold text-primary">₹{{ "%.2f"|format(total_expenses|float) }}</span>
                         </div>
 
                         <div class="mt-4">
@@ -115,7 +117,7 @@
                                 {% for desc, amount in expense_summary.items() %}
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
                                     <span>{{ desc }}</span>
-                                    <span class="badge bg-primary rounded-pill">₹{{ amount }}</span>
+                                    <span class="badge bg-primary rounded-pill">₹{{ "%.2f"|format(amount|float) }}</span>
                                 </li>
                                 {% endfor %}
                             </ul>
@@ -156,7 +158,7 @@
                                     {% for expense in expenses %}
                                     <tr>
                                         <td>{{ expense['date'] }}</td>
-                                        <td class="fw-bold">₹{{ expense['amount'] }}</td>
+                                        <td class="fw-bold">₹{{ "%.2f"|format(expense['amount']|float) }}</td>
                                         <td>{{ expense['description'] or 'No description' }}</td>
                                     </tr>
                                     {% else %}
@@ -189,7 +191,7 @@
                                             {% for person, amount in owe_to.items() %}
                                             <tr>
                                                 <td>{{ person }}</td>
-                                                <td class="fw-bold text-danger">₹{{ amount }}</td>
+                                                <td class="fw-bold text-danger">₹{{ "%.2f"|format(amount|float) }}</td>
                                             </tr>
                                             {% else %}
                                             <tr>
@@ -221,7 +223,7 @@
                                             {% for person, amount in owed_by.items() %}
                                             <tr>
                                                 <td>{{ person }}</td>
-                                                <td class="fw-bold text-success">₹{{ amount }}</td>
+                                                <td class="fw-bold text-success">₹{{ "%.2f"|format(amount|float) }}</td>
                                             </tr>
                                             {% else %}
                                             <tr>

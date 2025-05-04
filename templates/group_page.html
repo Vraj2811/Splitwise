@@ -40,6 +40,8 @@
                             <i class="bi bi-person-circle"></i> {{ session['name'] }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                            <li><div class="dropdown-item text-muted">ID: {{ session['unique_key'] }}</div></li>
+                            <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
                         </ul>
                     </li>
@@ -157,7 +159,7 @@
                                 <tbody>
                                     {% for key, value in expense_table.items() %}
                                     <tr>
-                                        <td class="fw-bold">₹{{ value.Amount }}</td>
+                                        <td class="fw-bold">₹{{ "%.2f"|format(value.Amount|float) }}</td>
                                         <td>{{ value.Date }}</td>
                                         <td>{{ value.Description or 'No description' }}</td>
                                         <td>{{ value['Paid By'] }}</td>
@@ -165,7 +167,7 @@
                                             {% for user, amount in value['Split Between'] %}
                                             <div class="d-flex justify-content-between">
                                                 <span>{{ user }}:</span>
-                                                <span class="ms-2">₹{{ amount }}</span>
+                                                <span class="ms-2">₹{{ "%.2f"|format(amount|float) }}</span>
                                             </div>
                                             {% endfor %}
                                         </td>
@@ -199,18 +201,18 @@
                         {% if members %}
                         <div class="payment-matrix">
                             <table class="table table-bordered table-hover">
-                                <thead class="table-primary">
-                                    <tr>
-                                        <th scope="col">Paid \ Owes</th>
+                                <thead>
+                                    <tr class="bg-primary">
+                                        <th scope="col" class="text-white">Paid \ Owes</th>
                                         {% for member in members %}
-                                        <th scope="col">{{ member['name'] }}</th>
+                                        <th scope="col" class="text-white">{{ member['name'] }}</th>
                                         {% endfor %}
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% for payer in members %}
                                     <tr>
-                                        <th scope="row" class="table-light">{{ payer['name'] }}</th>
+                                        <th scope="row" class="table-dark">{{ payer['name'] }}</th>
                                         {% for payee in members %}
                                         <td class="text-center">
                                             {% if payer['unique_key'] == payee['unique_key'] %}
@@ -220,7 +222,7 @@
                                             {% set amount_owed = calculate_amount_owed(payer['unique_key'],
                                             payee['unique_key'],group['group_no']) %}
                                             {% if amount_owed > 0 %}
-                                            <span class="payment-amount payment-positive">₹{{ amount_owed }}</span>
+                                            <span class="payment-amount payment-positive">₹{{ "%.2f"|format(amount_owed) }}</span>
                                             {% else %}
                                             <span class="text-muted">-</span>
                                             {% endif %}

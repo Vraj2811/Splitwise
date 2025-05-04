@@ -45,6 +45,8 @@
                             <i class="bi bi-person-circle"></i> {{ session['name'] }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                            <li><div class="dropdown-item text-muted">ID: {{ session['unique_key'] }}</div></li>
+                            <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
                         </ul>
                     </li>
@@ -127,10 +129,10 @@
                                         <td>
                                             <i class="bi bi-person-fill"></i> {{ payment[4] }}
                                         </td>
-                                        <td class="fw-bold text-success">₹{{ payment[2] }}</td>
+                                        <td class="fw-bold text-success">₹{{ "%.2f"|format(payment[2]|float) }}</td>
                                         <td>
                                             <button class="btn btn-sm btn-outline-primary copy-button"
-                                                data-message="Please pay ₹{{ payment[2] }} to {{ payment[4] }} for {{ group['name'] }} group expenses.">
+                                                data-message="Please pay ₹{{ "%.2f"|format(payment[2]|float) }} to {{ payment[4] }} for {{ group['name'] }} group expenses.">
                                                 <i class="bi bi-clipboard"></i> Copy
                                             </button>
                                         </td>

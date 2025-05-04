@@ -9,7 +9,7 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'default_secret_key_for_development')
 BASE_DIR = os.path.join('/home', 'site', 'wwwroot')  # Persistent path
 DATABASE = os.path.join(BASE_DIR, 'data.db')
-# DATABASE = './database.db'
+DATABASE = './database.db'
 
 
 app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{DATABASE}"
@@ -56,6 +56,7 @@ def init_db():
             date TEXT NOT NULL,
             expense_id TEXT,
             description TEXT,
+            category TEXT,
             FOREIGN KEY (group_id) REFERENCES groups(group_no)
         )
     ''')
@@ -302,6 +303,7 @@ def record_payment():
 
     amount = request.form['amount']
     description = request.form['description']
+    category = request.form['category']
     payed_by = session['unique_key']
     date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
@@ -309,9 +311,9 @@ def record_payment():
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
-        INSERT INTO expenses (payed_by, amount, description, date)
-        VALUES (?, ?, ?, ?)
-    ''', (payed_by, amount, description, date))
+        INSERT INTO expenses (payed_by, amount, description, date, category)
+        VALUES (?, ?, ?, ?, ?)
+    ''', (payed_by, amount, description, date, category))
     conn.commit()
     conn.close()
 
@@ -599,6 +601,7 @@ def tracker():
     # Filtering logic
     params = [session['unique_key']]
     time_filter = request.args.get('timeframe', 'all')
+    category_filter = request.args.get('category', 'all')
     today = datetime.today()
 
     start_date = None
@@ -626,16 +629,33 @@ def tracker():
         date_filter += " AND date <= ?"
         params.append(end_date)
 
-    # Fetch total expenses for selected timeframe (only for individual expenses)
-    cursor.execute(f'SELECT SUM(amount) FROM expenses WHERE payed_by = ? {date_filter}', params)
+    # Add category filter
+    category_clause = ""
+    if category_filter and category_filter != 'all':
+        category_clause = " AND category = ?"
+        params.append(category_filter)
+
+    # Get all available categories for the dropdown
+    cursor.execute('SELECT DISTINCT category FROM expenses WHERE payed_by = ? AND category IS NOT NULL',
+                  (session['unique_key'],))
+    categories = [row[0] for row in cursor.fetchall() if row[0]]
+
+    # Fetch total expenses for selected timeframe and category (only for individual expenses)
+    cursor.execute(f'SELECT SUM(amount) FROM expenses WHERE payed_by = ? {date_filter} {category_clause}', params)
     total_expenses = round(cursor.fetchone()[0] or 0, 2)
 
-    # Fetch expenses grouped by description for selected timeframe
-    cursor.execute(f'SELECT description, SUM(amount) FROM expenses WHERE payed_by = ? {date_filter} GROUP BY description', params)
-    expense_summary = {row[0]: row[1] for row in cursor.fetchall()}
+    # Fetch expenses grouped by category for selected timeframe
+    if category_filter and category_filter != 'all':
+        # If category is filtered, group by description within that category
+        cursor.execute(f'SELECT description, SUM(amount) FROM expenses WHERE payed_by = ? {date_filter} {category_clause} GROUP BY description', params)
+        expense_summary = {row[0]: row[1] for row in cursor.fetchall()}
+    else:
+        # If no category filter, group by category
+        cursor.execute(f'SELECT category, SUM(amount) FROM expenses WHERE payed_by = ? {date_filter} GROUP BY category', params)
+        expense_summary = {row[0] or 'Uncategorized': row[1] for row in cursor.fetchall()}
 
-    # Fetching list of expenses for selected timeframe
-    cursor.execute(f'SELECT date, amount, description FROM expenses WHERE payed_by = ? {date_filter}', params)
+    # Fetching list of expenses for selected timeframe and category
+    cursor.execute(f'SELECT date, amount, description, category FROM expenses WHERE payed_by = ? {date_filter} {category_clause}', params)
     expenses = cursor.fetchall()
 
     # Fetching how much the user owes (No Date Filter)
@@ -666,7 +686,9 @@ def tracker():
                            expenses=expenses,
                            owe_to=owe_to,
                            owed_by=owed_by,
-                           time_filter=time_filter)
+                           time_filter=time_filter,
+                           category_filter=category_filter,
+                           categories=categories)
 
 
 @app.route('/delete_expenses/<string:date>', methods=['POST'])
@@ -726,4 +748,4 @@ def vraj_only():
 
 if __name__ == '__main__':
     init_db()
-    app.run(host='0.0.0.0', port=5000,debug = True)
+    app.run(host='0.0.0.0', port=5001)

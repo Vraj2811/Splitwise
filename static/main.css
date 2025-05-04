@@ -178,7 +178,7 @@ body {
 }
 
 /* Form styling */
-.form-control {
+.form-control, .form-select {
   border-radius: 6px;
   border: 1px solid var(--border-color);
   padding: 10px 15px;
@@ -186,7 +186,7 @@ body {
   color: var(--text-light);
 }
 
-.form-control:focus {
+.form-control:focus, .form-select:focus {
   border-color: var(--primary-color);
   box-shadow: 0 0 0 0.2rem rgba(229, 9, 20, 0.25);
   background-color: var(--bg-darker);
@@ -209,6 +209,20 @@ body {
 .input-group-text {
   background-color: var(--bg-darker);
   border-color: var(--border-color);
+  color: var(--text-light);
+}
+
+/* Custom styling for select elements */
+.form-select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 16px 12px;
+  appearance: none;
+}
+
+.form-select option {
+  background-color: var(--bg-darker);
   color: var(--text-light);
 }
 

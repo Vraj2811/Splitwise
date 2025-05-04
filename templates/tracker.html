@@ -78,6 +78,16 @@
                                 </select>
                             </div>
 
+                            <div class="mb-3">
+                                <label for="category" class="form-label">Filter by Category:</label>
+                                <select name="category" id="category" class="form-select">
+                                    <option value="all" {% if category_filter=='all' %}selected{% endif %}>All Categories</option>
+                                    {% for category in categories %}
+                                    <option value="{{ category }}" {% if category_filter==category %}selected{% endif %}>{{ category }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
                             <div id="dateInputs" class="mb-3" style="display: {% if time_filter=='custom' %}block{% else %}none{% endif %};">
                                 <label class="form-label">Date Range:</label>
                                 <div class="input-group mb-2">
@@ -112,12 +122,38 @@
                         </div>
 
                         <div class="mt-4">
-                            <h6 class="mb-3">Expenses by Description</h6>
+                            <h6 class="mb-3">
+                                {% if category_filter == 'all' %}
+                                Expenses by Category
+                                {% else %}
+                                Expenses in {{ category_filter }} Category
+                                {% endif %}
+                            </h6>
                             <ul class="list-group list-group-flush">
                                 {% for desc, amount in expense_summary.items() %}
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span>{{ desc }}</span>
-                                    <span class="badge bg-primary rounded-pill">₹{{ "%.2f"|format(amount|float) }}</span>
+                                    {% if desc == 'Food' %}
+                                    <span><i class="bi bi-circle-fill text-danger me-2"></i>{{ desc }}</span>
+                                    <span class="badge rounded-pill" style="background-color: #E50914;">₹{{ "%.2f"|format(amount|float) }}</span>
+                                    {% elif desc == 'Transportation' %}
+                                    <span><i class="bi bi-circle-fill text-success me-2"></i>{{ desc }}</span>
+                                    <span class="badge rounded-pill" style="background-color: #4CD964;">₹{{ "%.2f"|format(amount|float) }}</span>
+                                    {% elif desc == 'Entertainment' %}
+                                    <span><i class="bi bi-circle-fill text-info me-2"></i>{{ desc }}</span>
+                                    <span class="badge rounded-pill" style="background-color: #5AC8FA;">₹{{ "%.2f"|format(amount|float) }}</span>
+                                    {% elif desc == 'Shopping' %}
+                                    <span><i class="bi bi-circle-fill text-warning me-2"></i>{{ desc }}</span>
+                                    <span class="badge rounded-pill" style="background-color: #FFCC00;">₹{{ "%.2f"|format(amount|float) }}</span>
+                                    {% elif desc == 'Bills' %}
+                                    <span><i class="bi bi-circle-fill me-2" style="color: #9C27B0;"></i>{{ desc }}</span>
+                                    <span class="badge rounded-pill" style="background-color: #9C27B0;">₹{{ "%.2f"|format(amount|float) }}</span>
+                                    {% elif desc == 'Other' %}
+                                    <span><i class="bi bi-circle-fill me-2" style="color: #FF9800;"></i>{{ desc }}</span>
+                                    <span class="badge rounded-pill" style="background-color: #FF9800;">₹{{ "%.2f"|format(amount|float) }}</span>
+                                    {% else %}
+                                    <span><i class="bi bi-circle-fill text-secondary me-2"></i>{{ desc }}</span>
+                                    <span class="badge bg-secondary rounded-pill">₹{{ "%.2f"|format(amount|float) }}</span>
+                                    {% endif %}
                                 </li>
                                 {% endfor %}
                             </ul>
@@ -131,7 +167,13 @@
                     <div class="col-md-12 mb-4">
                         <div class="card">
                             <div class="card-header">
-                                <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Expense Distribution</h5>
+                                <h5 class="mb-0"><i class="bi bi-pie-chart"></i>
+                                    {% if category_filter == 'all' %}
+                                    Expense Distribution by Category
+                                    {% else %}
+                                    Expense Distribution within {{ category_filter }}
+                                    {% endif %}
+                                </h5>
                             </div>
                             <div class="card-body chart-container">
                                 <canvas id="expenseChart" height="250"></canvas>
@@ -152,18 +194,36 @@
                                         <th>Date</th>
                                         <th>Amount</th>
                                         <th>Description</th>
+                                        <th>Category</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% for expense in expenses %}
                                     <tr>
-                                        <td>{{ expense['date'] }}</td>
-                                        <td class="fw-bold">₹{{ "%.2f"|format(expense['amount']|float) }}</td>
-                                        <td>{{ expense['description'] or 'No description' }}</td>
+                                        <td>{{ expense[0] }}</td>
+                                        <td class="fw-bold">₹{{ "%.2f"|format(expense[1]|float) }}</td>
+                                        <td>{{ expense[2] or 'No description' }}</td>
+                                        <td>
+                                            {% if expense[3] == 'Food' %}
+                                            <span class="badge" style="background-color: #E50914;">{{ expense[3] }}</span>
+                                            {% elif expense[3] == 'Transportation' %}
+                                            <span class="badge" style="background-color: #4CD964;">{{ expense[3] }}</span>
+                                            {% elif expense[3] == 'Entertainment' %}
+                                            <span class="badge" style="background-color: #5AC8FA;">{{ expense[3] }}</span>
+                                            {% elif expense[3] == 'Shopping' %}
+                                            <span class="badge" style="background-color: #FFCC00;">{{ expense[3] }}</span>
+                                            {% elif expense[3] == 'Bills' %}
+                                            <span class="badge" style="background-color: #9C27B0;">{{ expense[3] }}</span>
+                                            {% elif expense[3] == 'Other' %}
+                                            <span class="badge" style="background-color: #FF9800;">{{ expense[3] }}</span>
+                                            {% else %}
+                                            <span class="badge bg-secondary">{{ expense[3] or 'Uncategorized' }}</span>
+                                            {% endif %}
+                                        </td>
                                     </tr>
                                     {% else %}
                                     <tr>
-                                        <td colspan="3" class="text-center">No expenses found for the selected timeframe</td>
+                                        <td colspan="4" class="text-center">No expenses found for the selected timeframe</td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
@@ -253,13 +313,45 @@
     <script>
         // Chart.js configuration
         var ctx = document.getElementById('expenseChart').getContext('2d');
+
+        // Generate colors dynamically based on the number of categories
+        function generateColors(count) {
+            const baseColors = [
+                '#E50914', // Red (Primary color)
+                '#4CD964', // Green
+                '#5AC8FA', // Blue
+                '#FFCC00', // Yellow
+                '#9C27B0', // Purple
+                '#FF9800'  // Orange
+            ];
+
+            // If we have more categories than base colors, generate additional colors
+            if (count <= baseColors.length) {
+                return baseColors.slice(0, count);
+            } else {
+                let colors = [...baseColors];
+                for (let i = baseColors.length; i < count; i++) {
+                    // Generate random colors for additional categories
+                    const r = Math.floor(Math.random() * 255);
+                    const g = Math.floor(Math.random() * 255);
+                    const b = Math.floor(Math.random() * 255);
+                    colors.push(`rgb(${r}, ${g}, ${b})`);
+                }
+                return colors;
+            }
+        }
+
+        const labels = {{ expense_summary.keys() | list | tojson }};
+        const data = {{ expense_summary.values() | list | tojson }};
+        const colors = generateColors(labels.length);
+
         var chart = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: {{ expense_summary.keys() | list | tojson }},
+                labels: labels,
                 datasets: [{
-                    data: {{ expense_summary.values() | list | tojson }},
-                    backgroundColor: ['#E50914', '#4CD964', '#5AC8FA', '#FFCC00', '#9C27B0', '#3F51B5', '#FF9800'],
+                    data: data,
+                    backgroundColor: colors,
                     borderColor: '#121212',
                     borderWidth: 2
                 }]
@@ -274,6 +366,17 @@
                             color: '#F5F5F5',
                             font: {
                                 family: 'Poppins'
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: ₹${value.toFixed(2)} (${percentage}%)`;
                             }
                         }
                     }

@@ -678,15 +678,8 @@ def tracker():
     ''', [session['unique_key']])
     owed_by = {f"{row[0]} (ID: {row[1]})": row[2] for row in cursor.fetchall()}
 
-    # Get pagination parameters from request
-    daily_offset = int(request.args.get('daily_offset', 0))
-    weekly_offset = int(request.args.get('weekly_offset', 0))
-
-    # Get daily expenses for the selected week
-    # Calculate the date range based on the offset (0 = current week, 1 = previous week, etc.)
-    daily_end_date = today - timedelta(days=7*daily_offset)
-    daily_start_date = daily_end_date - timedelta(days=6)
-
+    # Get daily expenses for the past week
+    past_week_start = (today - timedelta(days=6)).strftime('%Y-%m-%d')
     daily_expenses_query = '''
         SELECT strftime('%Y-%m-%d', date) as day, SUM(amount) as total
         FROM expenses
@@ -695,47 +688,34 @@ def tracker():
         GROUP BY day
         ORDER BY day
     '''
-    cursor.execute(daily_expenses_query, (
-        session['unique_key'],
-        daily_start_date.strftime('%Y-%m-%d'),
-        daily_end_date.strftime('%Y-%m-%d')
-    ))
+    cursor.execute(daily_expenses_query, (session['unique_key'], past_week_start, today.strftime('%Y-%m-%d')))
     daily_expenses_data = cursor.fetchall()
 
-    # Create a complete list of the 7 days in the selected week (including days with no expenses)
+    # Create a complete list of the past 7 days (including days with no expenses)
     daily_expenses = []
     for i in range(7):
-        day = (daily_start_date + timedelta(days=i)).strftime('%Y-%m-%d')
+        day = (today - timedelta(days=6-i)).strftime('%Y-%m-%d')
         # Find if we have data for this day
         day_data = next((amount for d, amount in daily_expenses_data if d == day), 0)
         daily_expenses.append((day, day_data))
 
-    # Get weekly expenses for the selected month period
-    # Calculate the date range based on the offset (0 = current month, 1 = previous month, etc.)
-    weekly_end_week_start = today - timedelta(days=(28*weekly_offset))
-    weekly_start_date = weekly_end_week_start - timedelta(days=28)
-
+    # Get weekly expenses for the past month (4 weeks)
+    past_month_start = (today - timedelta(days=28)).strftime('%Y-%m-%d')
     weekly_expenses = []
 
     for i in range(4):
-        week_start = weekly_start_date + timedelta(days=i*7)
-        week_end = week_start + timedelta(days=6)
+        week_start = (today - timedelta(days=28-i*7)).strftime('%Y-%m-%d')
+        week_end = (today - timedelta(days=22-i*7)).strftime('%Y-%m-%d')
 
         cursor.execute(
             '''SELECT SUM(amount) FROM expenses
                WHERE payed_by = ? AND expense_id IS NULL
                AND date >= ? AND date <= ?''',
-            (session['unique_key'], week_start.strftime('%Y-%m-%d'), week_end.strftime('%Y-%m-%d'))
+            (session['unique_key'], week_start, week_end)
         )
         week_total = cursor.fetchone()[0] or 0
-
-        # Format the week label as "Week X (Start Date - End Date)"
         week_label = f"Week {i+1}"
         weekly_expenses.append((week_label, week_total))
-
-    # Calculate date ranges for display
-    daily_date_range = f"{daily_start_date.strftime('%d %b')} - {daily_end_date.strftime('%d %b %Y')}"
-    weekly_date_range = f"{weekly_start_date.strftime('%d %b')} - {(weekly_start_date + timedelta(days=27)).strftime('%d %b %Y')}"
 
     conn.close()
 
@@ -749,11 +729,7 @@ def tracker():
                            category_filter=category_filter,
                            categories=categories,
                            daily_expenses=daily_expenses,
-                           weekly_expenses=weekly_expenses,
-                           daily_offset=daily_offset,
-                           weekly_offset=weekly_offset,
-                           daily_date_range=daily_date_range,
-                           weekly_date_range=weekly_date_range)
+                           weekly_expenses=weekly_expenses)
 
 
 @app.route('/delete_expenses/<string:date>', methods=['POST'])
@@ -813,4 +789,4 @@ def vraj_only():
 
 if __name__ == '__main__':
     init_db()
-    app.run(host='0.0.0.0', port=5001)
+    app.run(host='0.0.0.0', port=5001, debug=True)

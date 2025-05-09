@@ -186,24 +186,11 @@
                 <div class="row">
                     <div class="col-md-6 mb-4">
                         <div class="card">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Daily Expenses</h5>
-                                <div class="btn-group">
-                                    <a href="{{ url_for('tracker', daily_offset=daily_offset+1, weekly_offset=weekly_offset, timeframe=time_filter, category=category_filter) }}" class="btn btn-sm btn-outline-secondary">
-                                        <i class="bi bi-chevron-left"></i> Previous
-                                    </a>
-                                    {% if daily_offset > 0 %}
-                                    <a href="{{ url_for('tracker', daily_offset=daily_offset-1, weekly_offset=weekly_offset, timeframe=time_filter, category=category_filter) }}" class="btn btn-sm btn-outline-secondary">
-                                        Next <i class="bi bi-chevron-right"></i>
-                                    </a>
-                                    {% endif %}
-                                </div>
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Daily Expenses (Past Week)</h5>
                             </div>
-                            <div class="card-body">
-                                <div class="text-center mb-2 text-muted small">{{ daily_date_range }}</div>
-                                <div class="chart-container">
-                                    <canvas id="dailyExpensesChart" height="250"></canvas>
-                                </div>
+                            <div class="card-body chart-container">
+                                <canvas id="dailyExpensesChart" height="250"></canvas>
                             </div>
                         </div>
                     </div>
@@ -211,24 +198,11 @@
                     <!-- Weekly Expenses Chart (Past Month) -->
                     <div class="col-md-6 mb-4">
                         <div class="card">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Weekly Expenses</h5>
-                                <div class="btn-group">
-                                    <a href="{{ url_for('tracker', daily_offset=daily_offset, weekly_offset=weekly_offset+1, timeframe=time_filter, category=category_filter) }}" class="btn btn-sm btn-outline-secondary">
-                                        <i class="bi bi-chevron-left"></i> Previous
-                                    </a>
-                                    {% if weekly_offset > 0 %}
-                                    <a href="{{ url_for('tracker', daily_offset=daily_offset, weekly_offset=weekly_offset-1, timeframe=time_filter, category=category_filter) }}" class="btn btn-sm btn-outline-secondary">
-                                        Next <i class="bi bi-chevron-right"></i>
-                                    </a>
-                                    {% endif %}
-                                </div>
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Weekly Expenses (Past Month)</h5>
                             </div>
-                            <div class="card-body">
-                                <div class="text-center mb-2 text-muted small">{{ weekly_date_range }}</div>
-                                <div class="chart-container">
-                                    <canvas id="weeklyExpensesChart" height="250"></canvas>
-                                </div>
+                            <div class="card-body chart-container">
+                                <canvas id="weeklyExpensesChart" height="250"></canvas>
                             </div>
                         </div>
                     </div>

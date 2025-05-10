@@ -678,8 +678,11 @@ def tracker():
     ''', [session['unique_key']])
     owed_by = {f"{row[0]} (ID: {row[1]})": row[2] for row in cursor.fetchall()}
 
-    # Get daily expenses for the past week
-    past_week_start = (today - timedelta(days=6)).strftime('%Y-%m-%d')
+    # Get daily expenses for the current week
+    # Calculate the start of the current week (Monday)
+    today_weekday = today.weekday()  # 0 is Monday, 6 is Sunday
+    current_week_start = today - timedelta(days=today_weekday)
+
     daily_expenses_query = '''
         SELECT strftime('%Y-%m-%d', date) as day, SUM(amount) as total
         FROM expenses
@@ -688,34 +691,102 @@ def tracker():
         GROUP BY day
         ORDER BY day
     '''
-    cursor.execute(daily_expenses_query, (session['unique_key'], past_week_start, today.strftime('%Y-%m-%d')))
+    cursor.execute(daily_expenses_query, (
+        session['unique_key'],
+        current_week_start.strftime('%Y-%m-%d'),
+        today.strftime('%Y-%m-%d')
+    ))
     daily_expenses_data = cursor.fetchall()
 
-    # Create a complete list of the past 7 days (including days with no expenses)
+    # Create a complete list of all 7 days in the current week (including days with no expenses)
     daily_expenses = []
-    for i in range(7):
-        day = (today - timedelta(days=6-i)).strftime('%Y-%m-%d')
+    for i in range(7):  # Include all days of the week
+        day = (current_week_start + timedelta(days=i)).strftime('%Y-%m-%d')
         # Find if we have data for this day
         day_data = next((amount for d, amount in daily_expenses_data if d == day), 0)
         daily_expenses.append((day, day_data))
 
-    # Get weekly expenses for the past month (4 weeks)
-    past_month_start = (today - timedelta(days=28)).strftime('%Y-%m-%d')
+    # Get weekly expenses for the current month
+    # Calculate the start of the current month
+    current_month_start = today.replace(day=1)
+
+    # Get the last day of the current month
+    if today.month == 12:
+        next_month = today.replace(year=today.year+1, month=1, day=1)
+    else:
+        next_month = today.replace(month=today.month+1, day=1)
+    last_day_of_month = (next_month - timedelta(days=1)).day
+    current_month_end = today.replace(day=last_day_of_month)
+
+    # Find the first Monday that falls on or before the first day of the month
+    first_day_weekday = current_month_start.weekday()  # 0 is Monday, 6 is Sunday
+    if first_day_weekday == 0:  # If the 1st is a Monday
+        first_monday = current_month_start
+    else:
+        # Go back to the previous Monday
+        first_monday = current_month_start - timedelta(days=first_day_weekday)
+
+    # We'll use the last day of the month to calculate the span
+
+    # Calculate the number of weeks needed to cover the entire month
+    # We need to find how many Mondays fall within or before the month but still have days in the month
+    days_in_month_span = (current_month_end - first_monday).days + 1
+    num_weeks = (days_in_month_span + 6) // 7  # Ceiling division to get the number of weeks
+
+    # This could be 4, 5, or in rare cases 6 weeks
     weekly_expenses = []
 
-    for i in range(4):
-        week_start = (today - timedelta(days=28-i*7)).strftime('%Y-%m-%d')
-        week_end = (today - timedelta(days=22-i*7)).strftime('%Y-%m-%d')
+    # Generate data for each week
+    for i in range(num_weeks):
+        week_start = first_monday + timedelta(days=i*7)
+        week_end = week_start + timedelta(days=6)  # Sunday
 
+        # For weeks that overlap with the month boundaries, only count days within the month
+        if week_start < current_month_start:
+            week_start = current_month_start
+        if week_end > current_month_end:
+            week_end = current_month_end
+
+        # Format dates with specific time boundaries (start at 00:00:00, end at 23:59:59)
+        week_start_str = week_start.strftime('%Y-%m-%d') + ' 00:00:00'
+        week_end_str = week_end.strftime('%Y-%m-%d') + ' 23:59:59'
+
+        # Get expenses for this week regardless of whether it's the current week
+        # First, check if there are any expenses in this date range
         cursor.execute(
-            '''SELECT SUM(amount) FROM expenses
+            '''SELECT COUNT(*) FROM expenses
                WHERE payed_by = ? AND expense_id IS NULL
-               AND date >= ? AND date <= ?''',
-            (session['unique_key'], week_start, week_end)
+               AND datetime(date) >= datetime(?) AND datetime(date) <= datetime(?)''',
+            (session['unique_key'], week_start_str, week_end_str)
         )
-        week_total = cursor.fetchone()[0] or 0
+        count_result = cursor.fetchone()[0]
+
+        # If there are expenses, get the sum
+        if count_result > 0:
+            cursor.execute(
+                '''SELECT SUM(amount) FROM expenses
+                   WHERE payed_by = ? AND expense_id IS NULL
+                   AND datetime(date) >= datetime(?) AND datetime(date) <= datetime(?)''',
+                (session['unique_key'], week_start_str, week_end_str)
+            )
+            result = cursor.fetchone()
+            week_total = result[0] if result[0] is not None else 0
+        else:
+            # No expenses in this date range
+            week_total = 0
+
+        # Debug print to show the date range and total
+        print(f"{week_start_str} to {week_end_str}: {week_total}")
+
         week_label = f"Week {i+1}"
         weekly_expenses.append((week_label, week_total))
+
+    for i in range(len(weekly_expenses)):
+        print(weekly_expenses[i])
+
+    # Create date range labels for display
+    daily_date_range = f"{current_week_start.strftime('%d %b')} - {today.strftime('%d %b %Y')}"
+    weekly_date_range = f"{current_month_start.strftime('%b %Y')}"
 
     conn.close()
 
@@ -729,7 +800,9 @@ def tracker():
                            category_filter=category_filter,
                            categories=categories,
                            daily_expenses=daily_expenses,
-                           weekly_expenses=weekly_expenses)
+                           weekly_expenses=weekly_expenses,
+                           daily_date_range=daily_date_range,
+                           weekly_date_range=weekly_date_range)
 
 
 @app.route('/delete_expenses/<string:date>', methods=['POST'])
@@ -789,4 +862,4 @@ def vraj_only():
 
 if __name__ == '__main__':
     init_db()
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    app.run(host='0.0.0.0', port=5001)

@@ -182,27 +182,33 @@
                     </div>
                 </div>
 
-                <!-- Daily Expenses Chart (Past Week) -->
+                <!-- Daily Expenses Chart (This Week) -->
                 <div class="row">
                     <div class="col-md-6 mb-4">
                         <div class="card">
                             <div class="card-header">
-                                <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Daily Expenses (Past Week)</h5>
+                                <h5 class="mb-0"><i class="bi bi-bar-chart"></i> This Week's Expenses</h5>
                             </div>
-                            <div class="card-body chart-container">
-                                <canvas id="dailyExpensesChart" height="250"></canvas>
+                            <div class="card-body">
+                                <div class="text-center mb-2 text-muted small">{{ daily_date_range }}</div>
+                                <div class="chart-container">
+                                    <canvas id="dailyExpensesChart" height="250"></canvas>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Weekly Expenses Chart (Past Month) -->
+                    <!-- Weekly Expenses Chart (This Month) -->
                     <div class="col-md-6 mb-4">
                         <div class="card">
                             <div class="card-header">
-                                <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Weekly Expenses (Past Month)</h5>
+                                <h5 class="mb-0"><i class="bi bi-bar-chart"></i> This Month's Expenses</h5>
                             </div>
-                            <div class="card-body chart-container">
-                                <canvas id="weeklyExpensesChart" height="250"></canvas>
+                            <div class="card-body">
+                                <div class="text-center mb-2 text-muted small">{{ weekly_date_range }}</div>
+                                <div class="chart-container">
+                                    <canvas id="weeklyExpensesChart" height="250"></canvas>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -421,7 +427,7 @@
             }
         }
 
-        // Daily Expenses Chart (Past Week)
+        // Daily Expenses Chart (This Week)
         var dailyCtx = document.getElementById('dailyExpensesChart').getContext('2d');
         var dailyLabels = {{ daily_expenses|map(attribute=0)|list|tojson }};
         var dailyData = {{ daily_expenses|map(attribute=1)|list|tojson }};
@@ -481,7 +487,7 @@
             }
         });
 
-        // Weekly Expenses Chart (Past Month)
+        // Weekly Expenses Chart (This Month)
         var weeklyCtx = document.getElementById('weeklyExpensesChart').getContext('2d');
         var weeklyLabels = {{ weekly_expenses|map(attribute=0)|list|tojson }};
         var weeklyData = {{ weekly_expenses|map(attribute=1)|list|tojson }};

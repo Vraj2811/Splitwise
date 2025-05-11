@@ -694,7 +694,7 @@ def tracker():
     cursor.execute(daily_expenses_query, (
         session['unique_key'],
         current_week_start.strftime('%Y-%m-%d'),
-        today.strftime('%Y-%m-%d')
+        today.strftime('%Y-%m-%d')+ ' 23:59:59'
     ))
     daily_expenses_data = cursor.fetchall()
 
@@ -775,14 +775,10 @@ def tracker():
             # No expenses in this date range
             week_total = 0
 
-        # Debug print to show the date range and total
-        print(f"{week_start_str} to {week_end_str}: {week_total}")
 
         week_label = f"Week {i+1}"
         weekly_expenses.append((week_label, week_total))
 
-    for i in range(len(weekly_expenses)):
-        print(weekly_expenses[i])
 
     # Create date range labels for display
     daily_date_range = f"{current_week_start.strftime('%d %b')} - {today.strftime('%d %b %Y')}"

@@ -215,8 +215,13 @@
                 </div>
 
                 <div class="card mb-4">
-                    <div class="card-header">
+                    <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0"><i class="bi bi-receipt"></i> Expense List</h5>
+                        {% if not show_all and has_more_expenses %}
+                        <span class="badge bg-secondary">Showing 20 of {{ total_expense_count }}</span>
+                        {% elif total_expense_count > 0 %}
+                        <span class="badge bg-secondary">Total: {{ total_expense_count }}</span>
+                        {% endif %}
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
@@ -261,6 +266,32 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        {% if not show_all and has_more_expenses %}
+                        <div class="text-center mt-3">
+                            <a href="{{ url_for('tracker',
+                                      timeframe=time_filter,
+                                      category=category_filter,
+                                      show_all='true',
+                                      start_date=request.args.get('start_date', ''),
+                                      end_date=request.args.get('end_date', '')) }}"
+                               class="btn btn-primary">
+                                <i class="bi bi-list"></i> Show All Expenses ({{ total_expense_count }})
+                            </a>
+                        </div>
+                        {% elif show_all and total_expense_count > 20 %}
+                        <div class="text-center mt-3">
+                            <a href="{{ url_for('tracker',
+                                      timeframe=time_filter,
+                                      category=category_filter,
+                                      show_all='false',
+                                      start_date=request.args.get('start_date', ''),
+                                      end_date=request.args.get('end_date', '')) }}"
+                               class="btn btn-outline-secondary">
+                                <i class="bi bi-list-nested"></i> Show Less
+                            </a>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
 

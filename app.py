@@ -602,6 +602,7 @@ def tracker():
     params = [session['unique_key']]
     time_filter = request.args.get('timeframe', 'all')
     category_filter = request.args.get('category', 'all')
+    show_all = request.args.get('show_all', 'false') == 'true'
     today = datetime.today()
 
     start_date = None
@@ -655,8 +656,15 @@ def tracker():
         expense_summary = {row[0] or 'Uncategorized': row[1] for row in cursor.fetchall()}
 
     # Fetching list of expenses for selected timeframe and category (newest to oldest)
-    cursor.execute(f'SELECT date, amount, description, category FROM expenses WHERE payed_by = ? {date_filter} {category_clause} ORDER BY date DESC', params)
+    # Add LIMIT clause if not showing all expenses
+    limit_clause = "" if show_all else " LIMIT 20"
+    cursor.execute(f'SELECT date, amount, description, category FROM expenses WHERE payed_by = ? {date_filter} {category_clause} ORDER BY date DESC{limit_clause}', params)
     expenses = cursor.fetchall()
+
+    # Get total count of expenses for pagination
+    cursor.execute(f'SELECT COUNT(*) FROM expenses WHERE payed_by = ? {date_filter} {category_clause}', params)
+    total_expense_count = cursor.fetchone()[0]
+    has_more_expenses = not show_all and total_expense_count > 20
 
     # Fetching how much the user owes (No Date Filter)
     cursor.execute('''
@@ -798,7 +806,10 @@ def tracker():
                            daily_expenses=daily_expenses,
                            weekly_expenses=weekly_expenses,
                            daily_date_range=daily_date_range,
-                           weekly_date_range=weekly_date_range)
+                           weekly_date_range=weekly_date_range,
+                           show_all=show_all,
+                           has_more_expenses=has_more_expenses,
+                           total_expense_count=total_expense_count)
 
 
 @app.route('/delete_expenses/<string:date>', methods=['POST'])

@@ -134,13 +134,13 @@ def dashboard():
 
     # Get the first and last date of the current month
     today = datetime.today()
-    start_date = today.replace(day=1).strftime('%Y-%m-%d')  # First day of the month
+    start_date = today.replace(day=1).strftime('%Y-%m-%d') + ' 00:00:00'  # First day of the month at 00:00:00
     last_day = calendar.monthrange(today.year, today.month)[1]  # Get last day of the month
-    end_date = today.replace(day=last_day).strftime('%Y-%m-%d')
+    end_date = today.replace(day=last_day).strftime('%Y-%m-%d') + ' 23:59:59'  # Last day at 23:59:59
 
     # Fetch total personal expenses for this month
     cursor.execute(
-        'SELECT SUM(amount) FROM expenses WHERE payed_by = ? AND payed_to IS NULL AND date BETWEEN ? AND ?',
+        'SELECT SUM(amount) FROM expenses WHERE payed_by = ? AND payed_to IS NULL AND datetime(date) >= datetime(?) AND datetime(date) <= datetime(?)',
         (session['unique_key'], start_date, end_date)
     )
     total_expenses_month = round(cursor.fetchone()[0] or 0, 2)
@@ -609,25 +609,27 @@ def tracker():
     end_date = None
 
     if time_filter == "this_month":
-        start_date = today.replace(day=1).strftime('%Y-%m-%d')  # First day of the month
+        start_date = today.replace(day=1).strftime('%Y-%m-%d') + ' 00:00:00'  # First day of the month at 00:00:00
         last_day = calendar.monthrange(today.year, today.month)[1]  # Get last day of the month
-        future_day = min(last_day + 1, calendar.monthrange(today.year, today.month)[1])  # Ensure it doesn't exceed month
-        end_date = today.replace(day=future_day).strftime('%Y-%m-%d')  # Last day + 1 (or max last day)
+        end_date = today.replace(day=last_day).strftime('%Y-%m-%d') + ' 23:59:59'  # Last day at 23:59:59
     elif time_filter == "prev_month":
         first_day_last_month = (today.replace(day=1) - timedelta(days=1)).replace(day=1)
         last_day_last_month = (today.replace(day=1) - timedelta(days=1))
-        start_date = first_day_last_month.strftime('%Y-%m-%d')  # First day of last month
-        end_date = last_day_last_month.strftime('%Y-%m-%d')  # Last day of last month
+        start_date = first_day_last_month.strftime('%Y-%m-%d') + ' 00:00:00'  # First day of last month at 00:00:00
+        end_date = last_day_last_month.strftime('%Y-%m-%d') + ' 23:59:59'  # Last day of last month at 23:59:59
     elif time_filter == "custom":
-        start_date = request.args.get('start_date')
-        end_date = request.args.get('end_date')
+        start_date_raw = request.args.get('start_date')
+        end_date_raw = request.args.get('end_date')
+        # Add time boundaries for custom dates
+        start_date = start_date_raw + ' 00:00:00' if start_date_raw else None
+        end_date = end_date_raw + ' 23:59:59' if end_date_raw else None
 
     date_filter = " AND expense_id IS NULL"
     if start_date:
-        date_filter += " AND date >= ?"
+        date_filter += " AND datetime(date) >= datetime(?)"
         params.append(start_date)
     if end_date:
-        date_filter += " AND date <= ?"
+        date_filter += " AND datetime(date) <= datetime(?)"
         params.append(end_date)
 
     # Add category filter
@@ -695,14 +697,14 @@ def tracker():
         SELECT strftime('%Y-%m-%d', date) as day, SUM(amount) as total
         FROM expenses
         WHERE payed_by = ? AND expense_id IS NULL
-        AND date >= ? AND date <= ?
+        AND datetime(date) >= datetime(?) AND datetime(date) <= datetime(?)
         GROUP BY day
         ORDER BY day
     '''
     cursor.execute(daily_expenses_query, (
         session['unique_key'],
-        current_week_start.strftime('%Y-%m-%d'),
-        today.strftime('%Y-%m-%d')+ ' 23:59:59'
+        current_week_start.strftime('%Y-%m-%d') + ' 00:00:00',
+        today.strftime('%Y-%m-%d') + ' 23:59:59'
     ))
     daily_expenses_data = cursor.fetchall()
 
